@@ -1,0 +1,1 @@
+find a solution for routes add post and modal opening.
