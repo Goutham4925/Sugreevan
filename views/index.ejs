@@ -1,159 +1,52 @@
 <%- include("patians/header.ejs") %>
 
-<div class="container mt-4">
-    <h1 class="text-center mb-4">Interactive Blog Hub</h1>
-    
-    <!-- Control Buttons -->
-    <div class="d-flex justify-content-center gap-3 mb-4">
-        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addPostModal">
-            <i class="fas fa-plus"></i> Add Post
-        </button>
-        <button class="btn btn-warning" id="editBtn" disabled data-bs-toggle="modal" data-bs-target="#editPostModal">
-            <i class="fas fa-edit"></i> Edit Post
-        </button>
-        <button class="btn btn-danger" id="deleteBtn" disabled>
-            <i class="fas fa-trash"></i> Delete Post
-        </button>
-    </div>
+<h1>Simple CRUD Operations</h1>
 
-    <!-- Posts Carousel -->
-    <div id="postsCarousel" class="carousel slide" data-bs-ride="carousel">
-        <div class="carousel-inner">
-            <% if (posts.length > 0) { %>
-                <% posts.forEach((post, index) => { %>
-                    <div class="carousel-item <%= index === 0 ? 'active' : '' %>" data-post-id="<%= post.id %>">
-                        <div class="card mx-auto" style="max-width: 600px;">
-                            <div class="card-body">
-                                <h5 class="card-title"><%= post.title %></h5>
-                                <p class="card-text"><%= post.content %></p>
-                            </div>
-                        </div>
-                    </div>
-                <% }) %>
-            <% } else { %>
-                <div class="carousel-item active">
-                    <div class="card mx-auto" style="max-width: 600px;">
-                        <div class="card-body text-center">
-                            <h5 class="card-title">No Posts Yet</h5>
-                            <p class="card-text">Add a post to get started!</p>
-                        </div>
-                    </div>
-                </div>
-            <% } %>
-        </div>
-        <button class="carousel-control-prev" type="button" data-bs-target="#postsCarousel" data-bs-slide="prev">
-            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-            <span class="visually-hidden">Previous</span>
-        </button>
-        <button class="carousel-control-next" type="button" data-bs-target="#postsCarousel" data-bs-slide="next">
-            <span class="carousel-control-next-icon" aria-hidden="true"></span>
-            <span class="visually-hidden">Next</span>
-        </button>
-    </div>
-</div>
-
-<!-- Add Post Modal -->
-<div class="modal fade" id="addPostModal" tabindex="-1" aria-labelledby="addPostModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="addPostModalLabel">Add New Post</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <form action="/add-post" method="POST" id="addPostForm">
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <input type="text" name="title" class="form-control" placeholder="Post Title" required>
-                    </div>
-                    <div class="mb-3">
-                        <textarea name="content" class="form-control" placeholder="Post Content" rows="4" required></textarea>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="submit" class="btn btn-primary">Add Post</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<!-- Edit Post Modal -->
-<div class="modal fade" id="editPostModal" tabindex="-1" aria-labelledby="editPostModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="editPostModalLabel">Edit Post</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <form action="/edit-post" method="POST" id="editPostForm">
-                <div class="modal-body">
-                    <input type="hidden" name="id" id="editPostId">
-                    <div class="mb-3">
-                        <input type="text" name="title" id="editPostTitle" class="form-control" required>
-                    </div>
-                    <div class="mb-3">
-                        <textarea name="content" id="editPostContent" class="form-control" rows="4" required></textarea>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="submit" class="btn btn-primary">Save Changes</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
+  <input type="text" id="itemInput" placeholder="Enter item..." />
+  <button onclick="addItem()">Add</button>
+  <ul id="itemList">
+    <% items.forEach((item, index) => { %>
+      <li id="item-<%= index %>">
+        <span><%= item %></span>
+        <button onclick="editItem(<%= index %>)">Edit</button>
+        <button onclick="deleteItem(<%= index %>)">Delete</button>
+      </li>
+    <% }) %>
+  </ul>
 
 <%- include("patians/footer.ejs") %>
 
 <script>
-document.addEventListener('DOMContentLoaded', () => {
-    const carousel = document.getElementById('postsCarousel');
-    const editBtn = document.getElementById('editBtn');
-    const deleteBtn = document.getElementById('deleteBtn');
+    async function addItem() {
+      const item = document.getElementById('itemInput').value;
+      if (item.trim()) {
+        const response = await fetch('/add', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ item })
+        });
+        location.reload();
+      } else {
+        alert('Please enter a valid item.');
+      }
+    }
 
-    function updateButtonState() {
-    const activeItem = carousel.querySelector('.carousel-item.active');
-    const hasPosts = <%= posts.length > 0 %>;  // Fix: Added `> 0`
-    editBtn.disabled = !hasPosts;
-    deleteBtn.disabled = !hasPosts;
-}
+    async function editItem(index) {
+      const newItem = prompt('Enter new value:');
+      if (newItem !== null && newItem.trim()) {
+        await fetch(`/edit/${index}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ item: newItem })
+        });
+        location.reload();
+      }
+    }
 
-
-    carousel.addEventListener('slid.bs.carousel', updateButtonState);
-    updateButtonState();
-
-    editBtn.addEventListener('click', () => {
-        const activeItem = carousel.querySelector('.carousel-item.active');
-        if (activeItem) {
-            const postId = activeItem.dataset.postId;
-            const title = activeItem.querySelector('.card-title').textContent;
-            const content = activeItem.querySelector('.card-text').textContent;
-            
-            document.getElementById('editPostId').value = postId;
-            document.getElementById('editPostTitle').value = title;
-            document.getElementById('editPostContent').value = content;
-        }
-    });
-
-    deleteBtn.addEventListener('click', () => {
-        const activeItem = carousel.querySelector('.carousel-item.active');
-        if (activeItem) {
-            const postId = activeItem.dataset.postId;
-            if (confirm('Are you sure you want to delete this post?')) {
-                const form = document.createElement('form');
-                form.method = 'POST';
-                form.action = '/delete-post';
-                const input = document.createElement('input');
-                input.type = 'hidden';
-                input.name = 'id';
-                input.value = postId;
-                form.appendChild(input);
-                document.body.appendChild(form);
-                form.submit();
-            }
-        }
-    });
-});
-</script>
+    async function deleteItem(index) {
+      if (confirm('Are you sure you want to delete this item?')) {
+        await fetch(`/delete/${index}`, { method: 'DELETE' });
+        location.reload();
+      }
+    }
+  </script>
